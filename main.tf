@@ -14,9 +14,9 @@ provider "aws" {
 resource "aws_s3_bucket" "bucket" {
   bucket = "photoviewer-bucket"
   acl    = "public-read-write"
- tags = {
-    Name        = "photoviewer-bucket"
-    
+  tags = {
+    Name = "photoviewer-bucket"
+
   }
 }
 resource "aws_cognito_identity_pool" "main" {
@@ -26,20 +26,26 @@ resource "aws_cognito_identity_pool" "main" {
 resource "aws_iam_role" "unauthenticated" {
   name = "cognito_unauthenticated"
 
-  assume_role_policy = <<EOF
-  {
-   "Version": "2012-10-17",
-   "Statement": [
-      {
-         "Effect": "Allow",
-         "Action": [
-            "s3:ListBucket"
-         ],
-         "Resource": [
-            "arn:aws:s3:::photoviewer-bucket"
-         ]
+  assume_role_policy = <<EOF 
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "cognito-identity.amazonaws.com"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "cognito-identity.amazonaws.com:aud": "${aws_cognito_identity_pool.main.id}"
+        },
+        "ForAnyValue:StringLike": {
+          "cognito-identity.amazonaws.com:amr": "unauthenticated"
+        }
       }
-   ]
+    }
+  ]
 }
 EOF
 }
